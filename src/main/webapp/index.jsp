@@ -226,7 +226,7 @@
 
 <script type="text/javascript">
     // 全局变量 总记录数
-    var totalRecord;
+    var totalRecord,currentPage;
     // 编辑按钮点击事件
     $(document).on("click", ".edit_btn", function () {
         // 1、填冲部门信息
@@ -250,14 +250,16 @@
             alert("邮箱错误！")
         }
         //2、更新保存员工数据
-
-        alert($("#empUpdateModal form").serialize());
         $.ajax({
             url:"${APP_PATH}/upemp/" + $(this).attr("edit-id"),
-            type:"POST",
-            data:$("#empUpdateModal form").serialize()+"&_method=PUT",
+            type:"PUT",
+            data:$("#empUpdateModal form").serialize(),
             success:function (result) {
-                alert(result.msg);
+                // alert(result.msg)
+                // 1、关闭模态框
+                $("#empUpdateModal").modal("hide");
+                // 2、刷新当前页
+                to_page(currentPage);
             }
         })
 
@@ -342,6 +344,7 @@
         var pageInfo = result.extend.pageInfo;
         $("#page_info_area").append("<p></p>").append("现在 <kbd>" + pageInfo.pageNum + "</kbd> 页 | 共 <kbd>" + pageInfo.pages + "</kbd> 页 | 共 <kbd>" + pageInfo.total + "</kbd> 条数据")
         totalRecord = pageInfo.total;
+        currentPage = pageInfo.pageNum;
     }
 
 

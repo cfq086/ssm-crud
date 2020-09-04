@@ -37,6 +37,7 @@ public class EmployeeService {
 
     /**
      * 保存用户信息————使用按条件保存，可以不提供某些参数，
+     *
      * @param employee 要保存的用户信息
      */
     public void saveEmp(Employee employee) {
@@ -45,7 +46,7 @@ public class EmployeeService {
 
     /**
      * @param empName 要检查的姓名字符串
-     * @return  如果查找记录返回false，查不到返回true----转换的结果，非实际查询返回值
+     * @return 如果查找记录返回false，查不到返回true----转换的结果，非实际查询返回值
      */
     public boolean checkUser(String empName) {
         EmployeeExample example = new EmployeeExample();
@@ -65,5 +66,20 @@ public class EmployeeService {
 
     public void updateEmp(Employee employe) {
         employeeMapper.updateByPrimaryKeySelective(employe);
+    }
+
+    public void deleteEmpById(Integer id) {
+        employeeMapper.deleteByPrimaryKey(id);
+    }
+
+    /**
+     * 批量删除
+     */
+    public void deleteBatch(List<Integer> str_ids) {
+        EmployeeExample employeeExample = new EmployeeExample();
+        EmployeeExample.Criteria criteria = employeeExample.createCriteria();
+        // delete from xxx where emp_id in(1,2,3,...)
+        criteria.andEmpIdIn(str_ids);
+        employeeMapper.deleteByExample(employeeExample);
     }
 }

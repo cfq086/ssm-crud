@@ -60,7 +60,7 @@
         <button class="btn btn-success" id="add_Btn">
             <span class="glyphicon glyphicon-plus" aria-hidden="true"></span> 添加
         </button>
-        <button class="btn btn-danger">
+        <button class="btn btn-danger" id="emp_del_all_btn">
             <span class="glyphicon glyphicon-trash" aria-hidden="true"></span> 删除
         </button>
     </div>
@@ -72,6 +72,7 @@
         <table class="table table-bordered table-striped table-hover" id="emps_table">
             <thead>
             <tr class="info">
+                <th><input type="checkbox" id="check_all"></th>
                 <th>id</th>
                 <th>姓名</th>
                 <th>性别</th>
@@ -179,7 +180,7 @@
                         <label for="empName_update_static" class="col-sm-2 control-label">姓 名</label>
                         <div class="col-sm-10">
                             <input type="text" class="form-control" name="empName" id="empName_update_static"
-                                   onchange="check_user()" disabled >
+                                   onchange="check_user()" disabled>
 
                         </div>
                     </div>
@@ -226,7 +227,7 @@
 
 <script type="text/javascript">
     // 全局变量 总记录数
-    var totalRecord,currentPage;
+    var totalRecord, currentPage;
     // 编辑按钮点击事件
     $(document).on("click", ".edit_btn", function () {
         // 1、填冲部门信息
@@ -234,7 +235,7 @@
         // 2、获取单个员工数据
         getEmp($(this).attr("edit_id"))
         // 3、把员工的id传递给模态框的更新
-        $("#emp_update_Btn").attr("edit-id",$(this).attr("edit_id"));
+        $("#emp_update_Btn").attr("edit-id", $(this).attr("edit_id"));
         //打开页面
         $("#empUpdateModal").modal();
     })
@@ -243,18 +244,17 @@
     $("#emp_update_Btn").click(function () {
         // 验证邮箱是否合法
         // 1、效验邮箱信息
-        if (check_email("#emp_update_email")){
+        if (check_email("#emp_update_email")) {
             alert("可以注册");
-        }
-        else {
+        } else {
             alert("邮箱错误！")
         }
         //2、更新保存员工数据
         $.ajax({
-            url:"${APP_PATH}/upemp/" + $(this).attr("edit-id"),
-            type:"PUT",
-            data:$("#empUpdateModal form").serialize(),
-            success:function (result) {
+            url: "${APP_PATH}/upemp/" + $(this).attr("edit-id"),
+            type: "PUT",
+            data: $("#empUpdateModal form").serialize(),
+            success: function (result) {
                 // alert(result.msg)
                 // 1、关闭模态框
                 $("#empUpdateModal").modal("hide");
@@ -264,6 +264,52 @@
         })
 
     });
+
+    //单个删除
+    $(document).on("click", ".delete_btn", function () {
+        //1、弹出是否确认删除对话框
+        var empName = $(this).parents("tr").find("td:eq(2)").text();
+        var empId = $(this).attr("del_id");
+        // alert($(this).parents("tr").find("td:eq(1)").text());
+        if (confirm("确认删除【" + empName + "】吗？")) {
+            //确认，发送ajax请求删除即可
+            $.ajax({
+                url: "${APP_PATH}/emp/" + empId,
+                type: "DELETE",
+                success: function (result) {
+                    alert(result.msg);
+                    //回到本页
+                    to_page(currentPage);
+                }
+            });
+        }
+    });
+
+    // 全部删除
+    $("#emp_del_all_btn").click(function () {
+        alert("点击了全部删除");
+        var empsName = "";
+        var empIds = "";
+        $.each($(".check_item:checked"), function () {
+            empsName += $(this).parents("tr").find("td:eq(2)").text() + ",";
+            empIds += $(this).parents("tr").find("td:eq(1)").text() + "-";
+        })
+        empsName = empsName.substring(0, empsName.length - 1);
+        empIds = empIds.substring(0, empIds.length - 1);
+        if (confirm("是否删除【" + empsName + "】")) {
+            alert("选择了确认");
+            $.ajax({
+                url: "${APP_PATH}/emp/" + empIds,
+                type: "DELETE",
+                success: function (result) {
+                    console.log(result.msg);
+                    to_page(currentPage);
+                }
+            })
+        } else {
+            alert("取消删除")
+        }
+    })
 
     function getEmp(id) {
         $.ajax({
@@ -313,11 +359,15 @@
 
     /*生成表格*/
     function build_emps_table(result) {
-        $("#emps_table tbody").empty();          // 先清空元素
+        $("#emps_table tbody").empty();     // 先清空元素
+        $("#check_all").prop("checked",false)       // 清空复选框
         var emps = result.extend.pageInfo.list;
         /*jquery 提供的遍历*/
         $.each(emps, function (index, item) {
             // alert(item.empName);
+
+            // 复选框
+            var checkBoxTd = $("<td></td>").append($("<input/>").attr("type", "checkBox").addClass("check_item"))
 
             var empIdTd = $("<td></td>").append(item.empId);
             var empNameTd = $("<td></td>").append(item.empName);
@@ -332,11 +382,27 @@
             var delBtn = $("<button></button>").addClass("btn btn-danger btn-sm delete_btn")
                 .append("<span></span>").addClass("glyphicon glyphicon-trash")
                 .append(" 删除");
+            // 添加自定义属性，获取要删除哪个用户
+            delBtn.attr("del_id", item.empId);
             var caoTd = $("<td></td>").addClass("bt_2").append(editBtn, delBtn);
             // 返回tr 表格行
-            $("<tr></tr>").append(empIdTd, empNameTd, genderTd, emailTd, deptNameTd, caoTd).appendTo("#emps_table tbody");
+            $("<tr></tr>").append(checkBoxTd, empIdTd, empNameTd, genderTd, emailTd, deptNameTd, caoTd).appendTo("#emps_table tbody");
         })
     }
+
+    // 添加全选全选
+    $("#check_all").click(function () {
+        // 全选按钮的状态
+        //     alert($(this).prop("checked"))
+        $(".check_item").prop("checked", $(this).prop("checked"));
+    });
+
+    // 单个选择框 check_item
+    $(document).on("click", ".check_item", function () {
+        //判断当前选择中的元素是否等于总个数。并把状态赋值给全选按钮
+        var flag = $(".check_item:checked").length == $(".check_item").length;
+        $("#check_all").prop("checked", flag);
+    });
 
     /*生成分页信息*/
     function build_page_info(result) {

@@ -38,6 +38,30 @@ public class EmployeeController {
     EmployeeService employeeService;        // 自动装配
 
     /**
+     * 可以单个删除、批量删除
+     * 删除用户
+     */
+    @ResponseBody
+    @RequestMapping(value = "/emp/{empId}", method = RequestMethod.DELETE)
+    public Msg deleteEmpById(@PathVariable("empId") String ids) {
+        if (ids.contains("-")){
+           String [] str_ids =  ids.split("-");
+           // 可以直接遍历单个删除---太笨，创建批量删除方法
+            List<Integer> list = new ArrayList<Integer>();
+            for (String str : str_ids){
+                list.add(Integer.parseInt(str));
+            }
+            employeeService.deleteBatch(list);
+
+        }else {
+            Integer id = Integer.parseInt(ids);
+            employeeService.deleteEmpById(id);
+        }
+
+        return Msg.success("删除用户");
+    }
+
+    /**
      * 更新呢员工信息
      * <p>
      * <p>
@@ -74,7 +98,6 @@ public class EmployeeController {
     @ResponseBody
     @RequestMapping(value = "/upemp/{empId}", method = RequestMethod.PUT)
     public Msg upEmp(Employee employe) {
-        System.out.println("执行可");
         System.out.println(employe);
         System.out.println(employe.getEmpId());
         System.out.println(employe.getEmpName());
@@ -186,7 +209,7 @@ public class EmployeeController {
      * @param pn 请求的页码
      * @return jsp的方式，数据处理由jsp渲染。。
      */
-//    @RequestMapping("/emps")
+    @RequestMapping("/empsJsp")
     public String getEmps(
             @RequestParam(value = "pn", defaultValue = "1") Integer pn,
             Model model) {
